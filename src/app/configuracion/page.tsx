@@ -283,7 +283,7 @@ export default function ConfiguracionPage() {
       confirmar_contrasena: pwConfirmar,
     });
     if (!result.success) {
-      const first = result.error.errors[0];
+      const first = result.error.issues[0];
       toast.error(first.message);
       return;
     }
