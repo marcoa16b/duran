@@ -84,11 +84,11 @@ export function Sidebar() {
           className={cn(
             "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-colors",
             pathname === "/configuracion"
-              ? "bg-white/6 text-white"
-              : "text-[#f4f7fc] hover:bg-white/5 hover:text-white",
+              ? "bg-foreground/6"
+              : "text-foreground hover:bg-foreground/5 hover:text-foreground",
           )}
         >
-          <Settings className="h-4 w-4 shrink-0 text-[#d7deea]" />
+          <Settings className="h-4 w-4 shrink-0 text-foreground" />
           <span className="truncate">Configuración</span>
         </Link>
       </div>

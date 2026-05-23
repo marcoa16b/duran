@@ -1,4 +1,12 @@
 export { changePasswordSchema, loginSchema } from "./auth";
+export {
+  type CategoriaInput,
+  categoriaSchema,
+  type UnidadInput,
+  unidadSchema,
+  type UpdateProfileInput,
+  updateProfileSchema,
+} from "./config";
 export { createEntradaSchema } from "./entrada";
 export { createProduccionSchema } from "./produccion";
 export {

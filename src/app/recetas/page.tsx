@@ -36,8 +36,9 @@ import { createRecetaSchema } from "@/lib/validations";
 import z from "zod";
 
 type CreateRecetaInput = z.infer<typeof createRecetaSchema>;
-type IngredienteInput = z.infer<typeof createRecetaSchema>["ingredientes"][number];
-
+type IngredienteInput = z.infer<
+  typeof createRecetaSchema
+>["ingredientes"][number];
 
 interface Receta {
   id: number;
