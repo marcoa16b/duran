@@ -5,9 +5,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- END:nextjs-agent-rules -->
 
 <!-- BEGIN:project-context -->
-# Project Context: Reflex → Next.js Migration
+# Project Context: Durán Inventory System
 
-This project is a **migration from Reflex (Python) to Next.js 16 (TypeScript/React)**. It is an inventory management system for *Panadería Durán*, a Costa Rican bakery. The full migration specification is documented in `codebase-migrate-next/`.
+Inventory management system for *Panadería Durán*, a Costa Rican bakery. Built with Next.js 16 App Router.
 
 ## Tech Stack
 
@@ -34,7 +34,7 @@ This project is a **migration from Reflex (Python) to Next.js 16 (TypeScript/Rea
 - `next lint` is **removed** in Next.js 16 — never use it
 - Indent: 2 spaces
 
-## Key Next.js 16 Breaking Changes to Follow
+## Key Next.js 16 Breaking Changes
 
 Always read `node_modules/next/dist/docs/` for the authoritative API before writing any Next.js code.
 
@@ -59,49 +59,48 @@ Always read `node_modules/next/dist/docs/` for the authoritative API before writ
 
 8. **React Compiler**: Config `reactCompiler: true` in `next.config.ts` is stable (not experimental).
 
-## Project Structure (Target)
-
-Based on `codebase-migrate-next/Architecture.md`:
+## Project Structure
 
 ```
 src/
-├── app/                          # Next.js App Router
+├── app/
 │   ├── layout.tsx                # Root layout (ThemeProvider, fonts, globals.css)
 │   ├── page.tsx                  # Dashboard
 │   ├── login/page.tsx
 │   ├── recovery-password/page.tsx
-│   ├── productos/page.tsx
-│   ├── entradas/page.tsx
-│   ├── salidas/page.tsx
-│   ├── recetas/page.tsx
-│   ├── produccion-diaria/page.tsx
-│   ├── alertas/page.tsx
-│   ├── estadisticas/page.tsx
-│   ├── reportes/page.tsx
-│   ├── proveedores/page.tsx
-│   ├── configuracion/page.tsx
-│   └── api/                      # Route Handlers
+│   ├── alertas/
+│   ├── configuracion/
+│   ├── entradas/
+│   ├── estadisticas/
+│   ├── produccion-diaria/
+│   ├── productos/
+│   ├── proveedores/
+│   ├── recetas/
+│   ├── reportes/
+│   ├── salidas/
+│   └── api/
 │       ├── auth/[...nextauth]/
-│       ├── productos/
-│       ├── entradas/
-│       ├── salidas/
-│       ├── recetas/
-│       ├── produccion/
 │       ├── alertas/
-│       ├── reportes/
-│       ├── proveedores/
+│       ├── catalogos/
 │       ├── config/
-│       └── catalogos/
+│       ├── entradas/
+│       ├── produccion/
+│       ├── productos/
+│       ├── proveedores/
+│       ├── recetas/
+│       ├── reportes/
+│       └── salidas/
 ├── components/
 │   ├── layout/                   # sidebar, header, dashboard-layout
-│   ├── ui/                       # tabla-generica, stat-card, alerta-card, modal-confirmacion
+│   ├── ui/                       # Shared UI primitives + shadcn/ui
 │   └── providers/                # auth-provider
 ├── lib/
-│   ├── services/                 # Business logic (migrated from dev/services/)
-│   ├── validations/              # Zod schemas (migrated from dev/core/exceptions.py)
+│   ├── services/                 # Business logic layer
+│   ├── validations/              # Zod schemas
 │   ├── db.ts                     # Prisma client singleton
 │   ├── auth.ts                   # Auth.js / JWT helpers
-│   └── utils.ts                  # Shared utilities
+│   ├── errors.ts                 # Custom error classes
+│   └── utils.ts                  # class-variance-authority + tailwind-merge
 ├── hooks/                        # Custom React hooks
 ├── types/                        # TypeScript type augmentations
 └── styles/
@@ -112,31 +111,14 @@ prisma/
 └── seed.ts                       # Seed data
 ```
 
-## Migration Reference Guides
+## Database
 
-The folder `codebase-migrate-next/` contains the complete migration specification:
-
-| File | Contents |
-|---|---|
-| `Architecture.md` | Architecture layers, data flow, target project structure |
-| `Auth.md` | Auth system: Auth.js with JWT strategy, argon2 password verification |
-| `Business-Logic.md` | All 8 services: Auth, Producto, Inventario, Receta, Produccion, Alerta, Reporte, Export — plus error class hierarchy |
-| `Component-Specs.md` | Detailed UI specs for every page and shared component |
-| `Database.md` | Prisma schema for all 20 tables, seed data |
-| `Dependencies.md` | Python → npm dependency mapping |
-| `Deployment.md` | Docker setup with Next.js standalone output |
-| `Design.md` | shadcn/ui theme, color palette, component mapping |
-| `Migration-Plan.md` | 8-phase migration plan (scaffolding → polish) |
-| `Routes-API.md` | Complete page and API route inventory |
-
-## Prisma
-
-- Schema: `prisma/schema.prisma` (currently empty — models must be added from `codebase-migrate-next/Database.md`)
+- **Prisma ORM** with PostgreSQL (Neon, URL in `.env`)
+- Schema: `prisma/schema.prisma` — 20 models defined
 - Client output: `app/generated/prisma` (configured in schema)
-- Config: `prisma.config.ts`
-- Adapter: `@prisma/adapter-pg`
-- DB: PostgreSQL via Neon (URL in `.env`)
-- No models defined yet — add 20 tables from `codebase-migrate-next/Database.md`
+- Config: `prisma.config.ts`, Adapter: `@prisma/adapter-pg`
+- Seed script: `prisma/seed.ts` (run via `tsx`)
+- Soft delete via `activo: boolean` on all tables — always filter with `where: { activo: true }` unless managing config
 
 ## shadcn/ui
 
@@ -151,12 +133,14 @@ The folder `codebase-migrate-next/` contains the complete migration specificatio
 - **Server Components by default** — only add `'use client'` when interactivity is needed (event handlers, state, effects, browser APIs)
 - **No comments in production code** — keep code self-documenting
 - **Zod** for all form and API validation (schemas in `src/lib/validations/`)
-- **React Hook Form** with `@hookform/resolvers/zod` for form state
+- **React Hook Form** with `@hookform/resolvers/zod` for form state (used in some forms; plain `useState` is also acceptable)
 - **Sonner** for toast notifications (already in shadcn/ui)
-- **date-fns** for date formatting
+- **date-fns** with `es` locale for date formatting
 - **Prisma `$transaction`** for all multi-table mutations (inventory entries/exits, production registration)
 - **Custom error classes** in `src/lib/errors.ts`: `AppError`, `NotFoundError`, `ValidationError`, `DuplicateError`, `UnauthorizedError`
-- **Auth.js v5** with JWT strategy and argon2 password verification (not bcrypt — existing hashes are Argon2)
-- **Soft delete** via `activo: boolean` on all tables — always filter with `where: { activo: true }`
-- **Decimal fields** use `Prisma.Decimal` type (not `number`) for monetary and quantity fields
+- **Auth.js v5** with JWT strategy and argon2 password verification
+- **Soft delete** via `activo: boolean` — `where: { activo: true }` in queries, `data: { activo: false }` on delete
+- **Decimal fields** use `Prisma.Decimal` (returned as `number` from JSON APIs)
+- **Data fetching** in client components: `fetch()` inside `useCallback` + `useEffect`, re-fetch after mutations
+- **Optimistic updates** for immediate UI feedback (header alerts counter, etc.)
 <!-- END:project-context -->
