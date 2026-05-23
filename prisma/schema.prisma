@@ -1,0 +1,379 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Provincias de Costa Rica
+model Provincia {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @unique @db.VarChar(100)
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  cantones Canton[]
+
+  @@index([activo])
+}
+
+/// Cantones de Costa Rica
+model Canton {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @db.VarChar(100)
+  provincia_id  Int
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  provincia Provincia @relation(fields: [provincia_id], references: [id])
+  distritos Distrito[]
+
+  @@index([provincia_id])
+  @@index([activo])
+}
+
+/// Distritos de Costa Rica
+model Distrito {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @db.VarChar(100)
+  canton_id     Int
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  canton    Canton     @relation(fields: [canton_id], references: [id])
+  proveedores Proveedor[]
+
+  @@index([canton_id])
+  @@index([activo])
+}
+
+/// Grupos de tipos: "entrada", "salida", "alerta"
+model ListTipo {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @unique @db.VarChar(50)
+  descripcion   String?
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  tipos Tipo[]
+
+  @@index([activo])
+}
+
+/// Tipos específicos dentro de cada grupo (e.g. "Compra", "Consumo", "Bajo stock")
+model Tipo {
+  id            Int       @id @default(autoincrement())
+  list_tipo_id  Int
+  nombre        String    @db.VarChar(50)
+  descripcion   String?
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  list_tipo            ListTipo             @relation(fields: [list_tipo_id], references: [id])
+  entradas_inventario  EntradaInventario[]
+  salidas_inventario   SalidaInventario[]
+  alertas_inventario   AlertaInventario[]
+
+  @@index([list_tipo_id])
+  @@index([activo])
+}
+
+/// Roles de usuario
+model Rol {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @unique @db.VarChar(50)
+  descripcion   String?
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  usuarios Usuario[]
+
+  @@index([activo])
+}
+
+/// Usuarios del sistema
+model Usuario {
+  id               Int       @id @default(autoincrement())
+  nombre           String    @db.VarChar(100)
+  correo           String    @unique @db.VarChar(150)
+  contrasena_hash  String    @db.VarChar(255)
+  rol_id           Int
+  activo           Boolean   @default(true)
+  creado_en        DateTime  @default(now())
+  actualizado_en   DateTime  @updatedAt
+
+  rol                    Rol                    @relation(fields: [rol_id], references: [id])
+  entradas_inventario   EntradaInventario[]
+  salidas_inventario    SalidaInventario[]
+  producciones_diarias  ProduccionDiaria[]
+
+  @@index([rol_id])
+  @@index([activo])
+}
+
+/// Categorías de producto
+model CategoriaProducto {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @unique @db.VarChar(100)
+  descripcion   String?
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  productos Producto[]
+
+  @@index([activo])
+}
+
+/// Unidades de medida
+model UnidadMedida {
+  id            Int       @id @default(autoincrement())
+  nombre        String    @unique @db.VarChar(50)
+  abreviatura   String    @unique @db.VarChar(10)
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  productos Producto[]
+
+  @@index([activo])
+}
+
+/// Proveedores
+model Proveedor {
+  id              Int       @id @default(autoincrement())
+  nombre          String    @db.VarChar(150)
+  telefono        String?   @db.VarChar(20)
+  correo          String?   @db.VarChar(150)
+  distrito_id     Int?
+  direccion_exacta String?
+  notas           String?
+  activo          Boolean   @default(true)
+  creado_en       DateTime  @default(now())
+  actualizado_en  DateTime  @updatedAt
+
+  distrito            Distrito?          @relation(fields: [distrito_id], references: [id])
+  entradas_inventario EntradaInventario[]
+
+  @@index([distrito_id])
+  @@index([activo])
+}
+
+/// Productos (materias primas e insumos)
+model Producto {
+  id                Int       @id @default(autoincrement())
+  nombre            String    @db.VarChar(150)
+  descripcion       String?
+  categoria_id      Int
+  unidad_medida_id  Int
+  stock_minimo      Decimal   @default(0) @db.Decimal(12, 3)
+  stock_actual      Decimal   @default(0) @db.Decimal(12, 3)
+  ubicacion         String?   @db.VarChar(100)
+  imagen_url        String?   @db.VarChar(500)
+  activo            Boolean   @default(true)
+  creado_en         DateTime  @default(now())
+  actualizado_en    DateTime  @updatedAt
+
+  categoria_producto    CategoriaProducto     @relation(fields: [categoria_id], references: [id])
+  unidad_medida         UnidadMedida          @relation(fields: [unidad_medida_id], references: [id])
+  lotes                 LoteInventario[]
+  recetas               Receta[]
+  recetas_detalle       RecetaDetalle[]
+  alertas               AlertaInventario[]
+
+  @@index([categoria_id])
+  @@index([unidad_medida_id])
+  @@index([activo])
+}
+
+/// Cabecera de entrada de inventario
+model EntradaInventario {
+  id             Int       @id @default(autoincrement())
+  tipo_id        Int
+  proveedor_id   Int?
+  fecha          DateTime
+  numero_factura String?   @db.VarChar(50)
+  observaciones  String?
+  usuario_id     Int?
+  activo         Boolean   @default(true)
+  creado_en      DateTime  @default(now())
+  actualizado_en DateTime  @updatedAt
+
+  tipo     Tipo         @relation(fields: [tipo_id], references: [id])
+  proveedor Proveedor?  @relation(fields: [proveedor_id], references: [id])
+  usuario  Usuario?     @relation(fields: [usuario_id], references: [id])
+  lotes    LoteInventario[]
+
+  @@index([tipo_id])
+  @@index([proveedor_id])
+  @@index([usuario_id])
+  @@index([activo])
+}
+
+/// Lotes asociados a una entrada de inventario
+model LoteInventario {
+  id               Int       @id @default(autoincrement())
+  entrada_id       Int
+  producto_id      Int
+  codigo_lote      String?   @db.VarChar(50)
+  cantidad         Decimal   @db.Decimal(12, 3)
+  precio_unitario  Decimal?  @db.Decimal(12, 2)
+  fecha_vencimiento DateTime?
+  activo           Boolean   @default(true)
+  creado_en        DateTime  @default(now())
+  actualizado_en   DateTime  @updatedAt
+
+  entrada            EntradaInventario        @relation(fields: [entrada_id], references: [id])
+  producto           Producto                 @relation(fields: [producto_id], references: [id])
+  detalle_salidas    DetalleSalidaInventario[]
+  produccion_detalles ProduccionDetalle[]
+
+  @@index([entrada_id])
+  @@index([producto_id])
+  @@index([fecha_vencimiento])
+  @@index([activo])
+}
+
+/// Cabecera de salida de inventario
+model SalidaInventario {
+  id            Int       @id @default(autoincrement())
+  tipo_id       Int
+  fecha         DateTime
+  observaciones String?
+  usuario_id    Int?
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  tipo    Tipo                      @relation(fields: [tipo_id], references: [id])
+  usuario Usuario?                  @relation(fields: [usuario_id], references: [id])
+  detalles DetalleSalidaInventario[]
+
+  @@index([tipo_id])
+  @@index([usuario_id])
+  @@index([activo])
+}
+
+/// Detalle de salida de inventario (qué lotes y cantidades se sacaron)
+model DetalleSalidaInventario {
+  id       Int       @id @default(autoincrement())
+  salida_id Int
+  lote_id  Int
+  cantidad  Decimal   @db.Decimal(12, 3)
+  motivo   String?
+  activo   Boolean   @default(true)
+  creado_en DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  salida SalidaInventario @relation(fields: [salida_id], references: [id])
+  lote   LoteInventario   @relation(fields: [lote_id], references: [id])
+
+  @@index([salida_id])
+  @@index([lote_id])
+  @@index([activo])
+}
+
+/// Receta (producto final con sus ingredientes)
+model Receta {
+  id          Int       @id @default(autoincrement())
+  producto_id Int
+  nombre      String    @db.VarChar(150)
+  descripcion String?
+  activo      Boolean   @default(true)
+  creado_en   DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  producto           Producto            @relation(fields: [producto_id], references: [id])
+  ingredientes       RecetaDetalle[]
+  producciones       ProduccionDiaria[]
+
+  @@index([producto_id])
+  @@index([activo])
+}
+
+/// Detalle de receta (ingrediente + cantidad)
+model RecetaDetalle {
+  id          Int       @id @default(autoincrement())
+  receta_id   Int
+  producto_id Int
+  cantidad    Decimal   @db.Decimal(12, 3)
+  activo      Boolean   @default(true)
+  creado_en   DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  receta  Receta  @relation(fields: [receta_id], references: [id])
+  producto Producto @relation(fields: [producto_id], references: [id])
+
+  @@unique([receta_id, producto_id])
+  @@index([receta_id])
+  @@index([producto_id])
+  @@index([activo])
+}
+
+/// Registro de producción diaria
+model ProduccionDiaria {
+  id                Int       @id @default(autoincrement())
+  receta_id         Int
+  fecha             DateTime
+  cantidad_producida Decimal  @db.Decimal(12, 3)
+  usuario_id        Int?
+  observaciones     String?
+  activo            Boolean   @default(true)
+  creado_en         DateTime  @default(now())
+  actualizado_en    DateTime  @updatedAt
+
+  receta  Receta              @relation(fields: [receta_id], references: [id])
+  usuario Usuario?            @relation(fields: [usuario_id], references: [id])
+  detalles ProduccionDetalle[]
+
+  @@index([receta_id])
+  @@index([usuario_id])
+  @@index([activo])
+}
+
+/// Consumo de lotes en producción (asignación FIFO)
+model ProduccionDetalle {
+  id            Int       @id @default(autoincrement())
+  produccion_id Int
+  lote_id       Int
+  cantidad      Decimal   @db.Decimal(12, 3)
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  produccion ProduccionDiaria @relation(fields: [produccion_id], references: [id])
+  lote       LoteInventario   @relation(fields: [lote_id], references: [id])
+
+  @@index([produccion_id])
+  @@index([lote_id])
+  @@index([activo])
+}
+
+/// Alertas de inventario (bajo stock, próximo a vencer)
+model AlertaInventario {
+  id            Int       @id @default(autoincrement())
+  tipo_id       Int
+  producto_id   Int
+  mensaje       String
+  leida         Boolean   @default(false)
+  fecha_leida   DateTime?
+  activo        Boolean   @default(true)
+  creado_en     DateTime  @default(now())
+  actualizado_en DateTime @updatedAt
+
+  tipo    Tipo    @relation(fields: [tipo_id], references: [id])
+  producto Producto @relation(fields: [producto_id], references: [id])
+
+  @@index([tipo_id])
+  @@index([producto_id])
+  @@index([leida])
+  @@index([activo])
+}

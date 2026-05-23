@@ -7,7 +7,26 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
+    "includes": [
+      "**",
+      "!node_modules",
+      "!.next",
+      "!dist",
+      "!build",
+      "!src/app/generated",
+      "!src/components/ui/alert-dialog.tsx",
+      "!src/components/ui/avatar.tsx",
+      "!src/components/ui/badge.tsx",
+      "!src/components/ui/button.tsx",
+      "!src/components/ui/card.tsx",
+      "!src/components/ui/dialog.tsx",
+      "!src/components/ui/input.tsx",
+      "!src/components/ui/label.tsx",
+      "!src/components/ui/select.tsx",
+      "!src/components/ui/sheet.tsx",
+      "!src/components/ui/sonner.tsx",
+      "!src/components/ui/table.tsx"
+    ]
   },
   "formatter": {
     "enabled": true,
